@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+option java_package = "com.kuaishou.protobuf.mmu.image";
+option java_outer_classname = "MmuOcrDetectProto";
+option java_multiple_files = true;
+
+package mmu.image;
+
+import "mmu/media_common.proto";
+import "mmu/common_message.proto";
+import "mmu/media_common_result_status.proto";
+
+message OcrDetectRequest {
+    repeated mmu.common.ImgUnit img = 1;
+    string biz = 2;
+    string req_id = 3;
+}
+
+message OcrDetectResponse {
+    mmu.common.ResultCode code = 1;
+    map<string, mmu.common.FrameOcrItem> ocr_result = 2;
+}
+
+message PhotoCoverOcrRequest {
+    repeated uint64 photo_id = 1;
+    string biz = 2;
+}
+
+message PhotoCoverOcrResponse {
+    mmu.common.ResultCode code = 1;
+    map<uint64, mmu.common.FrameOcrItem> ocr_result = 2;
+}
+
+message PhotoOcrResult {
+    repeated mmu.common.FrameOcrItem frame_ocr = 1;
+}
+
+message PhotoOcrResponse {
+    mmu.common.ResultCode code = 1;
+    map<uint64, PhotoOcrResult> ocr_result = 2;
+}
+
+service MmuOcrDetectService {
+    rpc OcrDetect (OcrDetectRequest) returns (OcrDetectResponse);
+    rpc GetPhotoCoverOcr (PhotoCoverOcrRequest) returns (PhotoCoverOcrResponse);
+    rpc GetPhotoOcr (PhotoCoverOcrRequest) returns (PhotoOcrResponse);
+}

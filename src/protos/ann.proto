@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+option cc_enable_arenas = true;
+
+option java_package = "com.kuaishou.protobuf.mmu.search.vision";
+option java_outer_classname = "CommonVisionSearchProto";
+
+//import "common/ids.proto";
+//import "common/blob_store.proto";
+//import "mmu/video_search_debug.proto";
+
+package se.vision;
+
+message NormalizeBox {
+  float x1 = 1; // 左上角的点
+  float y1 = 2;
+  float x2 = 3; // 右下角的点
+  float y2 = 4;
+  repeated CommonAttr attr = 5;
+}
+
+message BytesList {
+  repeated bytes value = 1;
+}
+
+message FloatList {
+  repeated float value = 1 [packed = true];
+}
+
+message Int64List {
+  repeated int64 value = 1 [packed = true];
+}
+
+message CommonAttr {
+  string name = 1;
+  oneof data {
+    int64 int64_value = 10;
+    float float_value = 11;
+    bytes bytes_value = 12;
+
+    Int64List int64_list = 101;
+    FloatList float_list = 102;
+    BytesList bytes_list = 103;
+  }
+}
+
+message Image {
+  string id = 1; // image id
+  oneof data {
+    bytes image = 2; // 图片内容
+    //ProtoBlobStoreKey key = 3; // blobstore key 获取图片
+  }
+  repeated CommonAttr attr = 10;
+}
+
+// 只支持图片（单张或多张）
+// 图片可以是原始图片或者blobstore的key
+message CommonVisionSearchRequest {
+  string service_type = 1; // 对应到实际的配置
+  string session_id = 2; //
+  //ClientRequestInfo client_info = 3;
+  uint32 count = 4; // 返回结果数
+  uint32 offset = 5; // 翻页功能
+  bool debug = 6; // 调试
+
+  repeated Image image = 8; // 图片
+  repeated CommonAttr attr = 9; // 其他的信息可以加入这里面，复杂的再说
+  string query = 10;
+}
+
+message ResultStatus {
+  int32 code = 1; // 1 代表成功，其他代表失败
+  string msg = 2; // 具体的错误信息
+}
+
+// 1. 能通用的就用CommonAttr
+// 2. 和业务很贴近的复杂对象就oneof
+message SearchItem {
+  string id = 1;
+  float score = 2;
+  string source = 3;
+  repeated CommonAttr attr = 4;
+}
+
+message ImageInfo {
+  string id = 1; // 对应 request 中 Image 的 id
+  repeated NormalizeBox box = 2;
+  repeated CommonAttr attr = 3;
+}
+
+message CommonVisionSearchResponse {
+  ResultStatus status = 1;
+  repeated ImageInfo image_info = 2;
+  repeated SearchItem search_item = 3; // 检索结果
+  //mmu.video.DebugLog debug_log = 4;
+  string session_id = 5;
+  repeated CommonAttr attr = 6;
+}
+
+message CommonVisioSearchTraceData {
+  int64 timestamp = 1;
+  CommonVisionSearchRequest request = 2;
+  CommonVisionSearchResponse response = 3;
+  string session_id = 4;
+}
+
+service CommonVisionSearchService {
+  rpc VisionSearch(CommonVisionSearchRequest) returns (CommonVisionSearchResponse);
+}

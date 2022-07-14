@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option java_package = "com.kuaishou.common.protobuf";
+option java_outer_classname = "ProtoBlobStore";
+
+message ProtoBlobStoreKey {
+    string db = 1;
+    string table = 2;
+    string key = 3;
+}

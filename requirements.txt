@@ -1,0 +1,4 @@
+infra-framework
+protobuf==3.12.0
+pillow
+fvcore

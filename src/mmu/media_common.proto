@@ -1,0 +1,213 @@
+syntax = "proto3";
+
+option java_package = "com.kuaishou.mmu.common";
+option java_outer_classname = "Unit";
+
+import "common/blob_store.proto";
+
+package mmu.common;
+
+// The image message.
+message ImgUnitDTO {
+    string version = 1;
+    uint64 timestamp = 2;
+    mmu.common.ImgUnit imgUnit = 3;
+}
+
+// The image message.
+message ImgUnit {
+    string id = 1;
+    bytes image = 2;
+    enum Type {
+        HEAD = 0;
+        BACKGROUND = 1;
+        FRAME = 2;
+    }
+    Type type = 3;
+    string txt = 4;
+    uint32 width = 5;
+    uint32 height = 6;
+    map<string, string> input_text = 7;
+}
+
+// The image info message (replace image in ImgUnit with dct hash)
+message ImgInfo {
+    string id = 1;
+    string hash = 2;
+    enum Type {
+        HEAD = 0;
+        BACKGROUND = 1;
+        FRAME = 2;
+    }
+    Type type = 3;
+    string high_freq_hash = 4;
+    bool naive = 5;
+}
+
+message MediaStorageKey {
+    uint64 task_id = 1; // 视频云的id, 结合subTask参数
+    string sub_task = 2;
+}
+
+// 整合媒体数据单元，以后音视频图片统一用这个
+message MediaUnit {
+    string id = 1;
+    bytes data = 2;
+    ProtoBlobStoreKey blob_key = 3;
+    uint64 timestamp = 4;
+    MediaStorageKey storage_key = 5;
+    map<string, string> params = 6; //存一些扩展信息，不如videoType
+}
+
+message MediaBatchUnit {
+    repeated mmu.common.MediaUnit data = 1;
+    string name = 2;
+}
+
+// The video message.
+message VideoUnit {
+    string id = 1;
+    bytes content = 2;
+}
+
+// The audio message.
+message AudioUnit {
+    string id = 1;
+    bytes audio = 2;
+}
+
+message PointUnit {
+    repeated float item = 1;
+}
+
+// The text message.
+message TextItem {
+    uint64 id = 1;
+    string content = 2;
+}
+
+// The texts message.
+message TextItems {
+    repeated TextItem items = 1;
+}
+
+// The text used for classifying
+message ClassifierText {
+    string id = 1;
+    string content = 2;
+    string tagids = 3;
+}
+
+message ClassifierTexts {
+    repeated ClassifierText texts = 1;
+}
+
+// 0  表示状态正常
+message SimpleResult {
+    uint32 status = 1;
+}
+
+// 与SimpleResult 相对应
+message BatchResult {
+    map<string, uint32> status = 1;
+}
+
+message SimpleImg {
+    string id = 1;
+}
+
+message FeatureInfo {
+    enum EncodeType {
+        DEFAULT = 0;
+        PQ = 1; // 普通PQ
+        OPQ = 2; // OPQ
+        NP_OPQ = 3; // NP_OPQ
+        IMI_OPQ = 4; // 最新的IMI_OPQ
+    }
+    bytes queryFeature = 1; // IMI_OPQ存放原始向量,非IMI_OPQ存多个残差
+    bytes fingerprint = 2; // 编码值
+    repeated uint32 bucket = 3; // 倒排链idx
+    repeated float features = 4; // 暂时无用
+    string id = 5;
+    float st_time = 6;
+    float ed_time = 7;
+    repeated float dist = 8; // imiopq 输入向量与bucket表示倒排链中心的l2距离
+    float term2 = 9; // imiopq index return this
+    EncodeType encode_type = 10; // fingerprint's encode type
+    float kpt_size = 11; // keypoint size diameter of the meaningful keypoint neighborhood
+    float kpt_angle = 12; // keypoint angle computed orientation of the keypoint
+}
+
+message Prob {
+    float prob = 1;
+    string version = 2;
+}
+
+message ProbResults {
+    map<string, float> probs = 1;
+}
+
+message BoolResult {
+    bool result = 1;
+    int32 status = 2;
+}
+
+message ProbResult {
+    float prob = 1;
+    int32 status = 2;
+}
+
+message StringResult {
+    string text = 1;
+    int32 status = 2;
+}
+
+message BoolBatchResult {
+    map<uint64, bool> result = 1;
+}
+
+message Location {
+    uint32 left = 1;
+    uint32 top = 2;
+    uint32 width = 3;
+    uint32 height = 4;
+}
+
+message SensitiveMatchResult {
+    string category = 1;
+    string keyword = 2;
+    string matched_text = 3;
+}
+
+message Point {
+    int32 x = 1;
+    int32 y = 2;
+}
+
+message Edge {
+    int32 start_point = 1;
+    int32 end_point = 2;
+}
+
+message MusicBeatWavData {
+    int32 wav_interval = 1; // 在1s内波形每个波形产生的时间间隔
+    repeated float beat = 2; // 节奏
+    repeated float second_wav = 3; // 每一秒的波形值
+}
+
+message EmptyValue {
+
+}
+
+message InclineRect {
+    float center_x = 1;
+    float center_y = 2;
+    float width = 3;
+    float height = 4;
+    float angle = 5;
+}
+
+message FrameImg {
+    string frame_id = 1;
+    repeated ImgUnit img = 2;
+}

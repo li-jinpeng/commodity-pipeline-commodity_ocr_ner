@@ -1,0 +1,138 @@
+syntax = "proto3";
+
+option java_package = "com.kuaishou.protobuf.mmu.serving";
+option java_outer_classname = "ModelServingProto";
+
+package mmu.serving;
+
+/**
+ * @author mayanjun <mayanjun@kuaishou.com>
+ * @date 2019-08-17
+ * @desc
+ * 模型的多样性导致各种模型服务的接口特别杂乱，如果一直从模型功能的角度定义接口会让proto永远无法收敛，且会给模型服务的开发维护带来非常大的负担；
+ * 这里参考tensorflow内部一些核心proto的方式，从模型功能无关的角度定义了一个模型预测服务通用的接口，并提供了尽量丰富的数据结构；
+ * 可以满足目前线上大部分模型需求，使用过程中业务侧需要和算法服务侧对齐所使用的字段以及使用方式；
+ * 有什么问题欢迎随时沟通讨论；
+ */
+
+service ModelServing {
+    rpc Predict(PredictRequest) returns (PredictResult);
+    rpc BatchPredict(BatchPredictRequest) returns (BatchPredictResult);
+}
+
+message Int32Array {
+    repeated int32 int32_elems = 1 [packed = true];
+}
+
+message Int64Array {
+    repeated int64 int64_elems = 1 [packed = true];
+}
+
+message FloatArray {
+    repeated float float_elems = 1 [packed = true];
+}
+
+message StringArray {
+    repeated string str_elems = 1;
+}
+
+message BoolArray {
+    repeated bool bool_elems = 1;
+}
+
+// 可以用作 point 坐标or宽高，如 (x,y) or (w,h)
+message Int32Pair {
+    int32 first = 1;
+    int32 second = 2;
+}
+
+// 可以用作 location 坐标，如 (x1,y1,x2,y2) or (x1,y1,w,h)
+message Int32Quad {
+    int32 first = 1;
+    int32 second = 2;
+    int32 third = 3;
+    int32 fourth = 4;
+}
+
+message FloatPair {
+    float first = 1;
+    float second = 2;
+}
+
+message BoolPair {
+    bool first = 1;
+    bool second = 2;
+}
+
+message StringPair {
+    string first = 1;
+    string second = 2;
+}
+
+message MetaInfo {
+    int32 int32_val = 1;
+    Int32Pair int32_pair = 2;
+    repeated Int32Pair int32_pairs = 3;
+    Int32Quad int32_quad = 4;
+    repeated Int32Quad int32_quads = 5;
+    Int32Array int32_array = 6;
+    repeated Int32Array int32_arrays = 7;
+    float float_val = 8;
+    FloatPair float_pair = 9;
+    FloatArray float_array = 10;
+    string str_val = 11;
+    StringPair str_pair = 12;
+    StringArray str_array = 13;
+    map<string, string> str_str_entries = 14;
+    bool bool_val = 15;
+    BoolPair bool_pair = 16;
+    BoolArray bool_array = 17;
+    Int64Array int64_array = 18;
+}
+
+message Media {
+    bytes data = 1; // bytes of img/audio...
+    MetaInfo meta = 2; // meta info, 如与上述img关联的locations、text等
+}
+
+message Feature {
+    FloatArray float_array = 1;
+    repeated FloatArray float_arrays = 2;
+    Int32Array int32_array = 3;
+    repeated Int32Array int32_arrays = 4;
+    map<string, float> str_float_entries = 5;
+}
+
+message PredictRequest {
+    string id = 1;  // 唯一标记一条请求，required
+    Feature feature = 2; // 输入是 embedding, float or int32
+    Media media = 3; // 输入是 media，如图像、音频等
+    repeated Media medias = 4; // 兼容一个请求需要输入多张图像的情况，如i3d
+    MetaInfo meta = 5; //类似 batch 请求里的 meta，如指定特殊layer输出等
+}
+
+message BatchPredictRequest {
+    string id = 1;  // 唯一标记这个batch请求, batch内的每个request自己的id也必须指定，否则模型服务无法正常处理 required
+    repeated PredictRequest requests = 2;
+    MetaInfo meta = 3; // 其它信息, 如分类模型是否启用指定layer输出等
+}
+
+enum Status {
+    UNKNOWN = 0;
+    SUCCESS = 1;
+    ERROR = 2;
+    INPUT_EMPTY = 3;
+    OUTPUT_EMPTY = 4;
+    INPUT_ERROR = 5;
+}
+
+message PredictResult {
+    Status status = 1;
+    Feature feature = 2; // 输出embedding or 分类结果
+    MetaInfo meta = 3; // 其它类型结果，提供了尽量丰富的数据结构供使用
+}
+
+message BatchPredictResult {
+    Status status = 1;
+    map<string, PredictResult> result = 2;
+}
